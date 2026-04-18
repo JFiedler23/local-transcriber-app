@@ -1,0 +1,10 @@
+backend/models/
+backend/tmp/
+.venv/
+frontend/.env
+frontend/node_modules/
+__pycache__/
+*.py[cod]
+phi-4-safetensors/
+llama.cpp/
+test-files/
