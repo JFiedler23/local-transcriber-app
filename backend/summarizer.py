@@ -16,7 +16,7 @@ MAX_WORDS = 5_000
 def _build_prompt(transcript: str) -> str:
     words = transcript.split()
     if len(words) > MAX_WORDS:
-        transcript = " ".join(words[-MAX_WORDS:])
+        transcript = " ".join(words[:MAX_WORDS])
 
     return (
         f"<|im_start|>system<|im_sep|>{SYSTEM_PROMPT}<|im_end|>"

@@ -32,14 +32,19 @@ export function ProgressBar({ jobId, onComplete, onError }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    let cancelled = false
+
     const poll = async () => {
       try {
         const res = await fetch(`${API}/status/${jobId}`)
+        if (cancelled) return
         if (!res.ok) {
           onError('Job not found')
           return
         }
         const data: StatusResponse = await res.json()
+        if (cancelled) return
         setStatus(data.status)
         setProgress(data.progress)
 
@@ -53,13 +58,17 @@ export function ProgressBar({ jobId, onComplete, onError }: Props) {
           return
         }
 
-        setTimeout(poll, 2000)
+        timer = setTimeout(poll, 2000)
       } catch {
-        setTimeout(poll, 3000)
+        if (!cancelled) timer = setTimeout(poll, 3000)
       }
     }
 
     poll()
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [jobId])
 
   if (status === 'error') {

@@ -14,20 +14,27 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    let cancelled = false
+
     const pollHealth = async () => {
       try {
         const res = await fetch(`${API}/health`)
         const data = await res.json()
         if (data.status === 'ready') {
-          setAppState('idle')
+          if (!cancelled) setAppState('idle')
           return
         }
       } catch {
         // server not up yet
       }
-      setTimeout(pollHealth, 2000)
+      if (!cancelled) timer = setTimeout(pollHealth, 2000)
     }
     pollHealth()
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [])
 
   const handleSubmit = async (

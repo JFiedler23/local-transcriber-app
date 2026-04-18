@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, CheckCircle, RotateCcw } from 'lucide-react'
+import { Download, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL
 
@@ -11,9 +11,11 @@ interface Props {
 export function DownloadPanel({ jobId, onReset }: Props) {
   const [downloading, setDownloading] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const handleDownload = async () => {
     setDownloading(true)
+    setDownloadError(null)
     try {
       const res = await fetch(`${API}/download/${jobId}`)
       if (!res.ok) throw new Error('Download failed')
@@ -31,6 +33,8 @@ export function DownloadPanel({ jobId, onReset }: Props) {
       URL.revokeObjectURL(url)
 
       setDownloaded(true)
+    } catch (e: unknown) {
+      setDownloadError(e instanceof Error ? e.message : 'Download failed')
     } finally {
       setDownloading(false)
     }
@@ -44,16 +48,24 @@ export function DownloadPanel({ jobId, onReset }: Props) {
       </div>
 
       {!downloaded ? (
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm
-            hover:bg-emerald-700 active:bg-emerald-800 transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download size={16} />
-          {downloading ? 'Downloading...' : 'Download'}
-        </button>
+        <>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm
+              hover:bg-emerald-700 active:bg-emerald-800 transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download size={16} />
+            {downloading ? 'Downloading...' : 'Download'}
+          </button>
+          {downloadError && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 w-full">
+              <AlertCircle size={16} className="shrink-0" />
+              {downloadError}
+            </div>
+          )}
+        </>
       ) : (
         <button
           onClick={onReset}

@@ -109,9 +109,13 @@ async def transcribe_endpoint(
     job = store.create(output_format=output_format, summarize=summarize, audio_path=Path(""))
 
     audio_path = TMP_DIR / f"{job.job_id}_audio{suffix}"
-    with audio_path.open("wb") as f:
-        content = await audio.read()
-        f.write(content)
+    try:
+        with audio_path.open("wb") as f:
+            content = await audio.read()
+            f.write(content)
+    except Exception:
+        store.delete(job.job_id)
+        raise HTTPException(status_code=500, detail="Failed to save uploaded audio")
 
     store.update(job.job_id, audio_path=audio_path)
     background_tasks.add_task(_process_job, job.job_id)
@@ -164,7 +168,7 @@ async def _process_job(job_id: str):
         try:
             store.update(job_id, status="transcribing", progress=0)
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
             def do_transcribe():
                 def on_progress(p: int):
