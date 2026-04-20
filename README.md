@@ -2,6 +2,8 @@
 
 Private, on-device audio transcription and summarization. No audio or text ever leaves your machine.
 
+![Local Transcriber](local_transcriber_screenshot.png)
+
 ## Features
 
 - Transcribe audio files (MP3, WAV, M4A, OGG, FLAC, WebM) using Whisper large-v3
