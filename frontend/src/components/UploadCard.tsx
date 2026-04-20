@@ -1,25 +1,24 @@
 import { useCallback, useRef, useState } from 'react'
 import { FileAudio, Upload } from 'lucide-react'
+import type { OutputFormat } from '../types'
 
 interface Props {
-  onSubmit: (file: File, outputFormat: 'txt' | 'md', summarize: boolean) => void
+  onSubmit: (file: File, outputFormat: OutputFormat, summarize: boolean) => void
   disabled: boolean
 }
 
 export function UploadCard({ onSubmit, disabled }: Props) {
   const [file, setFile] = useState<File | null>(null)
-  const [outputFormat, setOutputFormat] = useState<'txt' | 'md'>('txt')
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>('txt')
   const [summarize, setSummarize] = useState(false)
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleFile = (f: File) => setFile(f)
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragging(false)
     const f = e.dataTransfer.files[0]
-    if (f) handleFile(f)
+    if (f) setFile(f)
   }, [])
 
   const handleSubmit = () => {
@@ -42,7 +41,7 @@ export function UploadCard({ onSubmit, disabled }: Props) {
           type="file"
           accept="audio/*"
           className="hidden"
-          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          onChange={(e) => e.target.files?.[0] && setFile(e.target.files[0])}
         />
         {file ? (
           <>

@@ -1,15 +1,13 @@
 import asyncio
 import logging
-import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Literal
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-from job_store import JobStore, _safe_delete
+from job_store import JobStore, OutputFormat, _safe_delete
 from summarizer import Summarizer
 from transcriber import Transcriber
 
@@ -92,7 +90,7 @@ async def health():
 async def transcribe_endpoint(
     background_tasks: BackgroundTasks,
     audio: UploadFile,
-    output_format: Literal["txt", "md"] = Form(...),
+    output_format: OutputFormat = Form(...),
     summarize: bool = Form(...),
 ):
     if not models_ready:
@@ -197,7 +195,7 @@ async def _process_job(job_id: str):
             _safe_delete(job.audio_path)
 
 
-def _write_output(path: Path, text: str, fmt: str, is_summary: bool) -> None:
+def _write_output(path: Path, text: str, fmt: OutputFormat, is_summary: bool) -> None:
     title = "Summary" if is_summary else "Transcript"
     if fmt == "md":
         content = f"# {title}\n\n{text}\n"

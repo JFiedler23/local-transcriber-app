@@ -8,7 +8,6 @@ type JobStatus = 'queued' | 'transcribing' | 'summarizing' | 'complete' | 'error
 interface StatusResponse {
   job_id: string
   status: JobStatus
-  progress: number
   error: string | null
 }
 
@@ -28,7 +27,6 @@ const STATUS_LABELS: Record<JobStatus, string> = {
 
 export function ProgressBar({ jobId, onComplete, onError }: Props) {
   const [status, setStatus] = useState<JobStatus>('queued')
-  const [progress, setProgress] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
@@ -46,7 +44,6 @@ export function ProgressBar({ jobId, onComplete, onError }: Props) {
         const data: StatusResponse = await res.json()
         if (cancelled) return
         setStatus(data.status)
-        setProgress(data.progress)
 
         if (data.status === 'complete') {
           onComplete()
@@ -85,19 +82,9 @@ export function ProgressBar({ jobId, onComplete, onError }: Props) {
       <div className="flex items-center gap-2 text-zinc-600">
         <Loader2 size={16} className="animate-spin text-violet-500" />
         <span className="text-sm font-medium">{STATUS_LABELS[status]}</span>
-        {progress > 0 && (
-          <span className="ml-auto text-sm text-zinc-400">{progress}%</span>
-        )}
       </div>
       <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-        {progress === 0 && (status === 'transcribing' || status === 'summarizing') ? (
-          <div className="h-full w-1/3 bg-violet-400 rounded-full animate-pulse origin-left" />
-        ) : (
-          <div
-            className="h-full bg-violet-500 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        )}
+        <div className="h-full w-1/3 bg-violet-500 rounded-full animate-bar-slide" />
       </div>
     </div>
   )

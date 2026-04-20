@@ -1,18 +1,20 @@
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
+OutputFormat = Literal["txt", "md"]
+JobStatus = Literal["queued", "transcribing", "summarizing", "complete", "error"]
 
 @dataclass
 class Job:
     job_id: str
-    status: Literal["queued", "transcribing", "summarizing", "complete", "error"]
+    status: JobStatus
     progress: int
-    output_format: Literal["txt", "md"]
+    output_format: OutputFormat
     summarize: bool
     audio_path: Path
     output_path: Path | None
@@ -30,7 +32,7 @@ class JobStore:
 
     def create(
         self,
-        output_format: Literal["txt", "md"],
+        output_format: OutputFormat,
         summarize: bool,
         audio_path: Path,
     ) -> Job:

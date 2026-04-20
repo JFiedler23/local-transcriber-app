@@ -1,5 +1,4 @@
 import os
-import platform
 from pathlib import Path
 from typing import Callable
 
@@ -20,7 +19,7 @@ class Transcriber:
     def __init__(self, model_size: str = "large-v3"):
         device, compute_type = _get_device()
         cpu_count = os.cpu_count() or 4
-        cpu_threads = max(4, cpu_count // 2)
+        cpu_threads = max(1, cpu_count // 2)
         self._model = WhisperModel(
             model_size,
             device=device,
@@ -40,13 +39,11 @@ class Transcriber:
 
         total_duration = info.duration or 1.0
         transcript_parts: list[str] = []
-        elapsed = 0.0
 
         for segment in segments:
             transcript_parts.append(segment.text.strip())
-            elapsed = segment.end
             if progress_callback:
-                raw = elapsed / total_duration
+                raw = segment.end / total_duration
                 progress = int(min(raw, 1.0) * 80)
                 progress_callback(progress)
 

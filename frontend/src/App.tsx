@@ -1,28 +1,37 @@
 import { useEffect, useState } from 'react'
 import { Mic, Loader2 } from 'lucide-react'
 import { UploadCard } from './components/UploadCard'
+import type { OutputFormat } from './types'
 import { ProgressBar } from './components/ProgressBar'
 import { DownloadPanel } from './components/DownloadPanel'
 
 const API = import.meta.env.VITE_API_URL
 
-type AppState = 'loading' | 'idle' | 'processing' | 'complete' | 'error'
+const AppState = {
+  Loading: 'loading',
+  Idle: 'idle',
+  Processing: 'processing',
+  Complete: 'complete',
+  Error: 'error',
+} as const
+
+type AppStateType = typeof AppState[keyof typeof AppState]
 
 export default function App() {
-  const [appState, setAppState] = useState<AppState>('loading')
+  const [appState, setAppState] = useState<AppStateType>(AppState.Loading)
   const [jobId, setJobId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>
+    let timer: number
     let cancelled = false
 
     const pollHealth = async () => {
       try {
         const res = await fetch(`${API}/health`)
         const data = await res.json()
-        if (data.status === 'ready') {
-          if (!cancelled) setAppState('idle')
+        if (data.status === 'ready' && !cancelled) {
+          setAppState(AppState.Idle)
           return
         }
       } catch {
@@ -39,7 +48,7 @@ export default function App() {
 
   const handleSubmit = async (
     file: File,
-    outputFormat: 'txt' | 'md',
+    outputFormat: OutputFormat,
     summarize: boolean,
   ) => {
     setErrorMsg(null)
@@ -53,26 +62,26 @@ export default function App() {
       if (!res.ok) {
         const err = await res.json()
         const detail = err.detail
-        const message = typeof detail === 'string'
-          ? detail
-          : Array.isArray(detail)
-            ? detail.map((e: { msg: string }) => e.msg).join(', ')
-            : 'Upload failed'
+        let message = 'Upload failed'
+        
+        if (typeof detail === 'string') message = detail
+        else if (Array.isArray(detail)) message = detail.map((e: { msg: string }) => e.msg).join(', ')
+
         throw new Error(message)
       }
       const data = await res.json()
       setJobId(data.job_id)
-      setAppState('processing')
-    } catch (e: unknown) {
-      setErrorMsg(e instanceof Error ? e.message : 'Upload failed')
-      setAppState('error')
+      setAppState(AppState.Processing)
+    } catch (e: any) {
+      setErrorMsg(e?.message || 'Upload failed')
+      setAppState(AppState.Error)
     }
   }
 
   const handleReset = () => {
     setJobId(null)
     setErrorMsg(null)
-    setAppState('idle')
+    setAppState(AppState.Idle)
   }
 
   return (
@@ -87,18 +96,18 @@ export default function App() {
           <p className="text-sm text-zinc-500">Private, on-device audio transcription. Nothing leaves your machine.</p>
         </div>
 
-        {appState === 'loading' && (
+        {appState === AppState.Loading && (
           <div className="flex flex-col items-center gap-3 text-zinc-500">
             <Loader2 size={28} className="animate-spin text-violet-500" />
             <p className="text-sm">Loading models — this may take a minute...</p>
           </div>
         )}
 
-        {appState === 'idle' && (
+        {appState === AppState.Idle && (
           <UploadCard onSubmit={handleSubmit} disabled={false} />
         )}
 
-        {appState === 'error' && (
+        {appState === AppState.Error && (
           <div className="flex flex-col items-center gap-4 w-full">
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 w-full text-center">
               {errorMsg}
@@ -112,15 +121,15 @@ export default function App() {
           </div>
         )}
 
-        {appState === 'processing' && jobId && (
+        {appState === AppState.Processing && jobId && (
           <ProgressBar
             jobId={jobId}
-            onComplete={() => setAppState('complete')}
-            onError={(msg) => { setErrorMsg(msg); setAppState('error') }}
+            onComplete={() => setAppState(AppState.Complete)}
+            onError={(msg) => { setErrorMsg(msg); setAppState(AppState.Error) }}
           />
         )}
 
-        {appState === 'complete' && jobId && (
+        {appState === AppState.Complete && jobId && (
           <DownloadPanel jobId={jobId} onReset={handleReset} />
         )}
 
