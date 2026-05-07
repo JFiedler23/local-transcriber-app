@@ -1,4 +1,5 @@
 fastapi
 uvicorn[standard]
-faster-whisper
+pywhispercpp
+mutagen
 python-multipart

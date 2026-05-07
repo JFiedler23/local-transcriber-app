@@ -2,50 +2,32 @@ import os
 from pathlib import Path
 from typing import Callable
 
-from faster_whisper import WhisperModel
-
-
-def _get_device() -> tuple[str, str]:
-    try:
-        import torch
-        if torch.cuda.is_available():
-            return "cuda", "float16"
-    except ImportError:
-        pass
-    return "cpu", "int8"
+import mutagen
+from pywhispercpp.model import Model
 
 
 class Transcriber:
     def __init__(self, model_size: str = "large-v3"):
-        device, compute_type = _get_device()
         cpu_count = os.cpu_count() or 4
-        cpu_threads = max(1, cpu_count // 2)
-        self._model = WhisperModel(
-            model_size,
-            device=device,
-            compute_type=compute_type,
-            cpu_threads=cpu_threads,
-        )
+        n_threads = max(1, cpu_count // 2)
+        self._model = Model(model_size, n_threads=n_threads)
 
     def transcribe(
         self,
         audio_path: Path,
         progress_callback: Callable[[int], None] | None = None,
     ) -> str:
-        segments, info = self._model.transcribe(
-            str(audio_path),
-            beam_size=5,
-        )
+        _f = mutagen.File(str(audio_path))
+        total_cs = int(_f.info.length * 100) if _f is not None else 0
 
-        total_duration = info.duration or 1.0
         transcript_parts: list[str] = []
 
-        for segment in segments:
+        def on_segment(segment):
             transcript_parts.append(segment.text.strip())
-            if progress_callback:
-                raw = segment.end / total_duration
-                progress = int(min(raw, 1.0) * 80)
-                progress_callback(progress)
+            if progress_callback and total_cs > 0:
+                progress_callback(int(min(segment.t1 / total_cs, 1.0) * 80))
+
+        self._model.transcribe(str(audio_path), new_segment_callback=on_segment)
 
         if progress_callback:
             progress_callback(80)

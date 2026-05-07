@@ -63,9 +63,9 @@ def _load_models():
     logger.info("Loading Whisper large-v3...")
     transcriber = Transcriber()
     logger.info("Whisper loaded.")
-    logger.info("Loading Phi-4 Q8_0 (this may take a moment)...")
+    logger.info("Loading Llama-3.1-8B-Instruct Q4_K_M (this may take a moment)...")
     summarizer = Summarizer()
-    logger.info("Phi-4 loaded.")
+    logger.info("Llama-3.1-8B loaded.")
 
 
 app = FastAPI(title="Local Transcriber", lifespan=lifespan)

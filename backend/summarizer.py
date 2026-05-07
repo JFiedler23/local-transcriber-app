@@ -2,7 +2,7 @@ from pathlib import Path
 
 from llama_cpp import Llama
 
-MODEL_PATH = Path(__file__).parent / "models" / "phi-4-Q8_0.gguf"
+MODEL_PATH = Path(__file__).parent / "models" / "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
 
 SYSTEM_PROMPT = "You are a helpful assistant that summarizes transcripts concisely."
 
@@ -19,9 +19,9 @@ def _build_prompt(transcript: str) -> str:
         transcript = " ".join(words[:MAX_WORDS])
 
     return (
-        f"<|im_start|>system<|im_sep|>{SYSTEM_PROMPT}<|im_end|>"
-        f"<|im_start|>user<|im_sep|>{USER_TEMPLATE.format(transcript=transcript)}<|im_end|>"
-        f"<|im_start|>assistant<|im_sep|>"
+        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{SYSTEM_PROMPT}<|eot_id|>"
+        f"<|start_header_id|>user<|end_header_id|>\n\n{USER_TEMPLATE.format(transcript=transcript)}<|eot_id|>"
+        f"<|start_header_id|>assistant<|end_header_id|>\n\n"
     )
 
 
@@ -40,6 +40,6 @@ class Summarizer:
             prompt,
             max_tokens=1024,
             temperature=0.3,
-            stop=["<|im_end|>"],
+            stop=["<|eot_id|>"],
         )
         return output["choices"][0]["text"].strip()
